@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-Time Chat App</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  </head>
+  <style>
+    :root {
+      --text: #dff1f8;
+      --background: #06151b;
+      --primary: #8ecae7;
+      --secondary: #881e7c;
+      --accent: #d84c80;
+    }
+    .bg {
+      background: var(--background);
+      color: var(--text);
+    }
+    strong {
+      color: var(--accent);
+    }
+    #name-input::placeholder {
+      color: var(--accent);
+    }
+    #name-input {
+      color: var(--accent);
+      font-weight: bold;
+    }
+    input {
+      background: rgba(217, 217, 217, 0.4);
+    }
+    .bg-primary {
+      background: var(--primary);
+    }
+  </style>
+  <body class="bg">
+    <div class="container mx-auto p-4">
+      <h1 class="text-5xl font-semibold mb-4 bg sticky top-0 p-4">Room</h1>
+      <div
+        id="chat-box"
+        class="mb-4 flex-row inline-block align-baseline"
+        style="margin-bottom: 150px">
+        <input
+          type="text"
+          id="name-input"
+          placeholder="Your Name"
+          class="border p-2 rounded" />
+        <hr class="m-3" />
+        {% for msg in messages %}
+        <div class="p-2 rounded mb-2">
+          <p><strong>{{ msg.name }}</strong>: {{ msg.message }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="flex-col fixed bottom-0 bg p-3 space-y-2">
+        <input
+          type="text"
+          id="message-input"
+          placeholder="Type your message..."
+          class="border p-2 rounded flex-grow" />
+        <button onclick="sendMessage()" class="bg-primary rounded-full p-3">
+          <i class="fa fa-paper-plane" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
+    <script>
+      var socket = io.connect(
+        "http://" + document.domain + ":" + location.port
+      );
+
+      // Get the name from local storage
+      var storedName = localStorage.getItem("chatUserName") || "";
+
+      // Set the name input value
+      var nameInput = document.getElementById("name-input");
+      nameInput.value = storedName;
+
+      // Function to send a message
+      function sendMessage() {
+        var name = nameInput.value.trim();
+        var messageInput = document.getElementById("message-input");
+        var message = messageInput.value.trim();
+
+        // Check if both name and message are not empty
+        if (name !== "" && message !== "") {
+          // Save the name to local storage
+          localStorage.setItem("chatUserName", name);
+
+          // Emit the message with name to the server
+          socket.emit("message", { name: name, message: message });
+
+          // Clear the message input
+          messageInput.value = "";
+        }
+      }
+
+      // Event listener for receiving messages
+      socket.on("message", function (data) {
+        var chatBox = document.getElementById("chat-box");
+        chatBox.innerHTML +=
+          "<div class='p-2 rounded mb-2'> <strong>" +
+          data.name +
+          "</strong>:" +
+          data.message +
+          "</p>";
+      });
+    </script>
+  </body>
+</html>
